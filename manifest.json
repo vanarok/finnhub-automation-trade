@@ -41,9 +41,7 @@
         "https://robinhood.com/*"
       ],
       "resources": [
-        "content-scripts/request-interceptor.ts",
-        "content-scripts/sell.ts",
-        "content-scripts/buy.ts"
+        "content-scripts/request-interceptor.ts"
       ]
     }
   ]

@@ -8,6 +8,7 @@ import 'primeicons/primeicons.css'
 import Button from 'primevue/button'
 import ToggleButton from 'primevue/togglebutton'
 import InputNumber from 'primevue/inputnumber'
+import Dropdown from 'primevue/dropdown'
 
 const {use, mount, component} = createApp(App)
 
@@ -15,5 +16,6 @@ use(PrimeVue, {ripple: true})
 component('Button', Button)
 component('ToggleButton', ToggleButton)
 component('InputNumber', InputNumber)
+component('Dropdown', Dropdown)
 
 mount('#app')

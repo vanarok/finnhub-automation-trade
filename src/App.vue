@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 
-
 const {sendMessage, onConnect} = chrome.runtime
 const running = ref(false)
 const disabledRunning = ref(true)
@@ -14,6 +13,8 @@ const inputSellPDPM = ref(50)
 const PDPFM = ref(0)
 const orderQuantity = ref(2)
 const percentDifferencePerFiveMinute = ref(0)
+const typeOrder = ref('market')
+const typesOrder = ref(['market', 'limit'])
 
 const selectRobinhoodTab = () => {
     chrome.tabs.query({currentWindow: true}, (tabs) => {
@@ -41,20 +42,17 @@ const getSymbolFromTab = () => {
         }
     })
 }
-const getQuote = () => {
-    sendMessage({getQuote: {tabId: stock.value.tabId}}, (response) => {
-        if (response.quote) {
-            price.value = response.quote.rt.c.toFixed(2)
-            previousPrice.value = response.quote.pm.c.toFixed(2)
-            PDPM.value = response.quote.pdpm.toFixed(2)
-            PDPFM.value = response.quote.pdpfm.toFixed(2)
-        }
-    })
-}
 const getStatus = () => {
     sendMessage({getStatus: {tabId: stock.value.tabId}}, (response) => {
         if (response.running) {
-            running.value = response.running
+            console.log(response.running)
+            running.value = true
+            price.value = response.running.quote.rt.c.toFixed(2)
+            previousPrice.value = response.running.quote.pm.c.toFixed(2)
+            PDPM.value = response.running.quote.pdpm.toFixed(2)
+            // PDPFM.value = response.running.quote.pdpfm.toFixed(2)
+        } else {
+            running.value = false
         }
         if (disabledRunning.value) disabledRunning.value = false
     })
@@ -66,7 +64,8 @@ const sendStatus = () => {
             symbol: stock.value.symbol,
             tabId: stock.value.tabId,
             condition: {buy: {pdpm: inputBuyPDPM.value}, sell: {pdpm: -inputBuyPDPM.value}},
-            orderQuantity: orderQuantity.value
+            orderQuantity: orderQuantity.value,
+            typeOrder: typeOrder
         }
     }, (response) => {
         if (response.running) {
@@ -83,10 +82,11 @@ const testBuy = () => {
 const testSell = () => {
     sendMessage({testSell: {tabId: stock.value.tabId}})
 }
+
 setInterval(() => {
     getSymbolFromTab()
-    getQuote()
     getStatus()
+
 }, 1000)
 onMounted(() => {
     getSymbolFromTab()
@@ -94,7 +94,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="w-full h-full line-height-3 mt-4 m-2">
+    <div class="w-full h-full mt-4 m-2">
         <div class="field grid">
             <label class="col-fixed">Stock symbol:</label>
             <div class="col">
@@ -126,12 +126,11 @@ onMounted(() => {
             <label class="col-fixed">Order Quantity:</label>
             <InputNumber v-model="orderQuantity"/>
         </div>
-        <div class="field grid justify-content-center">
-            <toggle-button v-model="running" :disabled="disabledRunning" off-label="Stopped" on-label="Running"
-                           @click="sendStatus"/>
-            <Button label="Buy" @click="testBuy"/>
-            <Button label="Sell" @click="testSell"/>
-        </div>
+        <toggle-button v-model="running" :disabled="disabledRunning" off-label="Stopped" on-label="Running"
+                       @click="sendStatus"/>
+        <Button label="Buy" @click="testBuy"/>
+        <Button label="Sell" @click="testSell"/>
+        <Dropdown v-model="typeOrder" :options="typesOrder" placeholder="Select type order"/>
     </div>
 </template>
 
@@ -142,6 +141,23 @@ onMounted(() => {
     -webkit-font-smoothing: antialiased
     -moz-osx-font-smoothing: grayscale
     color: #2c3e50
-    height: 400px
-    width: 350px
+    height: 500px
+    width: 400px
+
+.p-button
+    margin-right: .5rem
+
+
+.p-buttonset .p-button
+    margin-right: 0
+
+
+.sizes .button
+    margin-bottom: .5rem
+    display: block
+
+
+.sizes .button:last-child
+    margin-bottom: 0
+
 </style>

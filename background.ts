@@ -52,97 +52,128 @@ const getCandle = (symbol: string, resolution: string, from: number, to: number)
 const selectRobinhoodTab = (tabId: number) => {
     chrome.tabs.update(tabId, {active: true}).then(() => console.log('Tab focused'))
 }
-const injectSell = (quantity: number, price: number) => {
-    ;(() => {
-        const xpath = function (xpathToExecute) {
-            const result = []
-            const nodesSnapshot = document.evaluate(xpathToExecute, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
-            for (let i = 0; i < nodesSnapshot.snapshotLength; i++) {
-                result.push(nodesSnapshot.snapshotItem(i))
-            }
-            return result
+const scriptOrder = async (script: string, typeOrder: string, shares: number, price: number,) => {
+    const x = (xpathToExecute: string) => {
+        const result = []
+        const nodesSnapshot = document.evaluate(xpathToExecute, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+        for (let i = 0; i < nodesSnapshot.snapshotLength; i++) {
+            result.push(nodesSnapshot.snapshotItem(i))
         }
-        setTimeout(() => {
-            xpath('html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[1]/div/div[1]/div/div/div[2]/div/div/h3/span/span')[0].click()
-        }, 1000)
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[1]/div/div[3]/div/span')[0].click()
-        }, 10000)
-        setTimeout(() => {
-            xpath('/html/body/div[4]/div/div/div/div/div/div[2]/div/span/span')[0].click()
-        }, 15000)
-        // xpath('/html/body/div[4]/div/div/div/div/div/div[1]/div/span/span')[0].click()
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[2]/div/div[2]/div/div/div/input')[0].value = price
-        }, 20000)
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[2]/div/div[3]/div/div/div/input')[0].value = quantity
-        }, 25000)
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[3]/div/div[2]/div/div/button')[0].click()
-        }, 30000)
 
-    })()
-}
-const injectBuy = (quantity: number, price: number) => {
-    ;(() => {
-        const xpath = function (xpathToExecute) {
-            const result = []
-            const nodesSnapshot = document.evaluate(xpathToExecute, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
-            for (let i = 0; i < nodesSnapshot.snapshotLength; i++) {
-                result.push(nodesSnapshot.snapshotItem(i))
-            }
-            return result
+        return result
+    }
+    const wait = (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout))
+    const inputChange = (node: HTMLInputElement, inputValue: string) => {
+        const descriptor = Object.getOwnPropertyDescriptor(node, 'value')
+
+        node.value = `${inputValue}#`
+        if (descriptor && descriptor.configurable) {
+            delete node.value
         }
-        setTimeout(() => {
-            xpath('html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[1]/div/div[1]/div/div/div[1]/div/div/h3/span/span')[0].click()
-        }, 1000)
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[1]/div/div[3]/div/span')[0].click()
-        }, 10000)
-        setTimeout(() => {
-            xpath('/html/body/div[4]/div/div/div/div/div/div[2]/div/span/span')[0].click()
-        }, 15000)
-        // xpath('/html/body/div[4]/div/div/div/div/div/div[1]/div/span/span')[0].click()
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[2]/div/div[2]/div/div/div/input')[0].value = price
-        }, 20000)
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[2]/div/div[3]/div/div/div/input')[0].value = quantity
-        }, 25000)
-        setTimeout(() => {
-            xpath('/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[3]/div/div[2]/div/div/button')[0].click()
-        }, 30000)
-    })()
+        node.value = inputValue
+
+        const e = document.createEvent('HTMLEvents')
+        e.initEvent('change', true, false)
+        node.dispatchEvent(e)
+
+        if (descriptor) {
+            Object.defineProperty(node, 'value', descriptor)
+        }
+    }
+    let buyTab = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/form/div[1]/div/div[1]/div/div/div[1]/div/div/h3/span/span'
+    let sellTab = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/form/div[1]/div/div[1]/div/div/div[2]/div/div/h3/span/span'
+    let orderTypeDropdown = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/form/div[1]/div/div[3]/div/span'
+    let orderTypeLimitOrder = '/html/body/div[4]/div/div/div/div/div/div[2]/div/span/span'
+    let orderTypeMarket = '/html/body/div[4]/div/div/div/div/div/div[1]/div/span/span'
+    let inputShares = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/form/div[2]/div/div[3]/div/div/div/input'
+    let inputLimitPrice = '/html/body/div[1]/main/div[2]/div/div/div/div/div/main/div/div[2]/aside/div[1]/form/div[2]/div/div[2]/div/div/div/input'
+    let buttonOrder = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/form/div[3]/div/div[2]/div/div/button'
+    let buttonConfirmOrder = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/form/div[3]/div/div[2]/div[1]/div/button'
+    let avgSharePrice = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/div/div[1]/div[2]/div'
+    let totalCredit = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/div/div[1]/div[3]/div'
+    let textSuccessOrder = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/div/header/h3/span'
+    let buttonDone = '//*[@id="sdp-ticker-symbol-highlight"]/aside/div[1]/div/div[3]/div[1]/button'
+
+
+    try {
+        if (script === 'buy') {
+            x(buyTab)[0].click()
+            await wait(10000)
+        }
+        if (script === 'sell') {
+            x(sellTab)[0].click()
+            await wait(10000)
+        }
+        if (typeOrder === 'market') {
+            x(orderTypeDropdown)[0].click()
+            await wait(10000)
+
+            x(orderTypeMarket)[0].click()
+            await wait(10000)
+
+            let nodeInputShares = x(inputShares)[0]
+            inputChange(nodeInputShares, shares)
+            await wait(10000)
+
+            x(buttonOrder)[0].click()
+            await wait(10000)
+
+            x(buttonConfirmOrder)[0].click()
+            await wait(10000)
+
+            x(buttonDone)[0].click()
+            await wait(10000)
+
+            if (x(textSuccessOrder)[0].innerHTML === 'U Sold') {
+                return true
+            }
+            if (x(textSuccessOrder)[0].innerHTML === 'U Purchased') {
+                return true
+            }
+        }
+        if (typeOrder === 'limit') {
+            x(orderTypeDropdown)[0].click()
+            await wait(10000)
+
+            x(orderTypeLimitOrder)[0].click()
+            await wait(10000)
+
+            let nodeInputPriceLimit = x(inputLimitPrice)[0]
+            inputChange(nodeInputPriceLimit, price)
+            await wait(10000)
+
+            let nodeInputShares = x(inputShares)[0]
+            inputChange(nodeInputShares, shares)
+            await wait(10000)
+        }
+        return false
+    } catch (e) {
+        console.log(e)
+        return false
+    }
+
 }
-const executeScript = (tabId: number, script: string, quantity: number, price: number, func: any) => {
-    chrome.scripting.executeScript({
+const executeScript = async (tabId: number, script: string, typeOrder: string, shares: number, price: number) => {
+    return await chrome.scripting.executeScript({
         target: {tabId: tabId, allFrames: true},
-        func: func,
-        args: [quantity, price]
-    }).then(() => console.log(`Script ${script} executed`))
-}
-const buy = async (tabId: number, quantity: number, price: number) => {
-    chrome.tabs.query({active: true, currentWindow: true}, ([first]) => {
-        if (first.url && first.id === tabId && first.url.indexOf('robinhood.com/stocks') !== -1) {
-            executeScript(tabId, 'buy', quantity, price, injectBuy)
-        } else if (first.id !== tabId) {
-            selectRobinhoodTab(tabId)
-            setTimeout(buy, 3000, tabId, quantity, price)
-        } else stopTrading(tabId)
+        func: scriptOrder,
+        args: [script, typeOrder, shares, price]
     })
 }
-const sell = async (tabId: number, quantity: number, price: number) => {
-    chrome.tabs.query({active: true, currentWindow: true}, ([first]) => {
-        if (first.url && first.id === tabId && first.url.indexOf('robinhood.com/stocks') !== -1) {
-            executeScript(tabId, 'sell', quantity, price, injectSell)
-        } else if (first.id !== tabId) {
-            selectRobinhoodTab(tabId)
-            setTimeout(sell, 5000, tabId, quantity, price)
-        } else stopTrading(tabId)
-    })
+const order = async (tabId: number, script: string, typeOrder: string, shares: number, price: number) => {
+    let [first] = await chrome.tabs.query({active: true, currentWindow: true})
+
+    if (first.url && first.id === tabId && first.url.indexOf('robinhood.com/stocks') !== -1) {
+        let [first] = await executeScript(tabId, script, typeOrder, shares, price)
+        return first.result
+    }
+    if (first.id !== tabId) {
+        selectRobinhoodTab(tabId)
+        setTimeout(order, 3000, tabId, shares, price)
+    }
+    return false
 }
-const stopTrading = (tabId: number) => {
+const stopBot = (tabId: number) => {
     console.log('Stop trading')
     clearInterval(running[tabId].intervalUpdateQuote)
     clearInterval(running[tabId].intervalHistoryPriceOneMinute)
@@ -167,7 +198,7 @@ const checkStrategy = (tabId: number, quote: any, orderQuantity: number, pdpm: n
         }
     }
 }
-const setIntervalCheckStrategy = (tabId: number, symbol: string, timeout: number) => {
+const setIntervalCheckStrategy = (tabId: number, symbol: string, typeOrder: string, timeout: number) => {
     return running[tabId].intervalUpdateQuote = setInterval(async () => {
         let quote = await getQuote(symbol)
         let previousMinute = running[tabId].quote.pm ? running[tabId].quote.pm.c : quote.c
@@ -184,16 +215,24 @@ const setIntervalCheckStrategy = (tabId: number, symbol: string, timeout: number
                 isBusy = true
                 switch (strategy) {
                     case 'buy':
-                        await buy(tabId, orderQuantity, price)
-                        running[tabId].orderQuantity = -running[tabId].orderQuantity
-                        setTimeout(() => isBusy = false, 5000)
-                        console.log('Buy:', orderQuantity, price)
+                        let orderBuy = await order(tabId, 'buy', typeOrder, orderQuantity, price)
+                        if (orderBuy) {
+                            running[tabId].orderQuantity = -running[tabId].orderQuantity
+                            isBusy = false
+                            console.log('Success buy:', orderQuantity, price)
+                        } else {
+                            stopBot(tabId)
+                        }
                         break
                     case 'sell':
-                        await sell(tabId, Math.abs(orderQuantity), price)
-                        running[tabId].orderQuantity = Math.abs(running[tabId].orderQuantity)
-                        setTimeout(() => isBusy = false, 5000)
-                        console.log('Sell:', Math.abs(orderQuantity), price)
+                        let orderSell = await order(tabId, 'sell', typeOrder, Math.abs(orderQuantity), price)
+                        if (orderSell) {
+                            running[tabId].orderQuantity = Math.abs(running[tabId].orderQuantity)
+                            isBusy = false
+                            console.log('Success sell:', Math.abs(orderQuantity), price)
+                        } else {
+                            stopBot(tabId)
+                        }
                         break
                     default:
                         console.log('Hold')
@@ -203,7 +242,7 @@ const setIntervalCheckStrategy = (tabId: number, symbol: string, timeout: number
             }
         } else if (!quote) {
             console.log('Stop, API broken')
-            stopTrading(tabId)
+            stopBot(tabId)
         }
     }, timeout)
 }
@@ -212,7 +251,7 @@ const setIntervalSaveEveryMinutePrice = (tabId: number, symbol: string, timeout:
         running[tabId].quote.pm = await getQuote(symbol)
     }, timeout)
 }
-const beginTrading = async (tabId: number, symbol: string) => {
+const startBot = async (tabId: number, symbol: string, typeOrder: string) => {
     if (running[tabId]) {
         let quote = await getQuote(symbol)
         if (quote) {
@@ -222,14 +261,14 @@ const beginTrading = async (tabId: number, symbol: string) => {
             running[tabId].quote.pm = quote
             // initialization
 
-            let intervalCheckStrategy = setIntervalCheckStrategy(tabId, symbol, 2000)
+            let intervalCheckStrategy = setIntervalCheckStrategy(tabId, symbol, typeOrder, 3000)
             let intervalSaveEveryMinutePrice = setIntervalSaveEveryMinutePrice(tabId, symbol, 60000)
             if (intervalCheckStrategy && intervalSaveEveryMinutePrice) {
                 console.log('Interval started')
                 return true
             } else {
                 console.log('Interval not started')
-                stopTrading(tabId)
+                stopBot(tabId)
                 return false
             }
         } else {
@@ -248,16 +287,16 @@ chrome.runtime.onMessage.addListener(
                testBuy,
            }, sender, sendResponse) => {
         if (testSell) {
-            await sell(testSell.tabId, 2, 1)
+            await order(testSell.tabId, 'buy', 'market', 1, 10)
             sendResponse({success: true})
         }
         if (testBuy) {
-            await buy(testBuy.tabId, 2, 1)
+            await order(testBuy.tabId, 'buy', 'market', 1, 10)
             sendResponse({success: true})
         }
         if (getStatus) {
             let tab = running[getStatus.tabId]
-            sendResponse({running: !!tab})
+            sendResponse({running: tab})
         }
         if (setStatus && setStatus.running) {
             running[setStatus.tabId] = {
@@ -265,16 +304,12 @@ chrome.runtime.onMessage.addListener(
                 condition: setStatus.condition,
                 orderQuantity: setStatus.orderQuantity
             }
-            let begin = await beginTrading(setStatus.tabId, setStatus.symbol)
-            sendResponse({running: begin})
+            let start = await startBot(setStatus.tabId, setStatus.symbol, setStatus.typeOrder)
+            sendResponse({running: start})
         }
         if (setStatus && !setStatus.running) {
-            let stop = stopTrading(setStatus.tabId)
+            let stop = stopBot(setStatus.tabId)
             sendResponse({success: stop})
-        }
-        if (getQuote && running[getQuote.tabId]) {
-            let quote = running[getQuote.tabId].quote
-            sendResponse({quote: quote ? quote : false})
         }
         sendResponse({ping: true})
     }
@@ -323,12 +358,6 @@ function deleteTimer(port) {
         delete port._timer
     }
 }
-
-
-// const port = chrome.runtime.connect('okgnaacofiioaihkppnigfpebbammpag')
-// setInterval(() => {
-//     port.postMessage({ping: true})
-// }, 300)
 
 let lifeline
 
