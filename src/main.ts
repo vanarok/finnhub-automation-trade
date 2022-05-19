@@ -9,6 +9,8 @@ import Button from 'primevue/button'
 import ToggleButton from 'primevue/togglebutton'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
 
 const {use, mount, component} = createApp(App)
 
@@ -17,5 +19,8 @@ component('Button', Button)
 component('ToggleButton', ToggleButton)
 component('InputNumber', InputNumber)
 component('Dropdown', Dropdown)
+component('TabView', TabView)
+component('TabPanel', TabPanel)
+
 
 mount('#app')
