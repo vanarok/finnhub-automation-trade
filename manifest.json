@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Stock Trading Bot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "action": {
     "default_icon": {
-      "128": "public/icon128-chrome.png",
       "16": "public/icon16-chrome.png",
-      "48": "public/icon48-chrome.png"
+      "48": "public/icon48-chrome.png",
+      "128": "public/icon128-chrome.png"
     },
     "default_popup": "index.html"
   },
@@ -20,19 +20,7 @@
   "background": {
     "service_worker": "background.ts"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://robinhood.com/*"
-      ],
-      "js": [
-        "content-scripts/content-script.ts",
-        "content-scripts/request-interceptor.ts"
-      ]
-    }
-  ],
   "host_permissions": [
-    "https://robinhood.com/*",
     "<all_urls>"
   ],
   "web_accessible_resources": [
@@ -41,7 +29,6 @@
         "https://robinhood.com/*"
       ],
       "resources": [
-        "content-scripts/request-interceptor.ts"
       ]
     }
   ]
