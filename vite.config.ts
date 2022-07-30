@@ -1,19 +1,25 @@
-import { resolve } from 'path'
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { crx } from '@crxjs/vite-plugin'
-import manifest from './manifest.json'
+import { crx } from '@crxjs/vite-plugin';
+import vue from '@vitejs/plugin-vue';
+import { resolve } from 'node:path';
+import { presetWind } from 'unocss';
+import Unocss from 'unocss/vite';
+import { defineConfig } from 'vite';
 
-// https://vitejs.dev/config/
+import manifest from './manifest.config.js';
+
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@': resolve(__dirname, './control/src'),
+            $: resolve(__dirname, './automation/src'),
+        },
+    },
     build: {
         rollupOptions: {
             input: {
-                main: resolve(__dirname, 'index.html'),
-                backgroundLogic: resolve(__dirname, 'background-logic/logic.html')
+                automation: resolve(__dirname, 'automation/index.html'),
             },
         },
     },
-    plugins: [vue(), crx({manifest})]
-})
-
+    plugins: [Unocss({ presets: [presetWind()] }), vue(), crx({ manifest })],
+});

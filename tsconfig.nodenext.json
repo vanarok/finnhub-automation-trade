@@ -1,14 +1,13 @@
 {
     "compilerOptions": {
+        "composite": true,
         "importsNotUsedAsValues": "error",
-        "esModuleInterop": true,
         "isolatedModules": true,
         "jsx": "preserve",
         "lib": ["esnext", "dom", "DOM.Iterable"],
-        "module": "esnext",
-        "moduleResolution": "node",
+        "module": "nodenext",
         "paths": {
-            "$/*": ["./control/src/*"]
+            "$/*": ["./automation/src/*"]
         },
         "skipLibCheck": true,
         "strict": true,
@@ -16,10 +15,5 @@
         "declaration": true,
         "useDefineForClassFields": true
     },
-    "exclude": ["node_modules", "dist"],
-    "include": ["control/src/**/*.vue", "control/src/**/*.ts"],
-    "references": [
-        { "path": "./tsconfig.node.json" },
-        { "path": "./tsconfig.nodenext.json" }
-    ]
+    "include": ["automation/src/**/*.ts"]
 }
